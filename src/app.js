@@ -4,6 +4,7 @@ const Configstore = require('configstore');
 const pkg = require('../package.json');
 const fs = require('fs');
 const path = require('path');
+const logger = require('winston');
 const defaults = {
     host: 'localhost',
     port: 8080,
@@ -17,6 +18,8 @@ const Util = require('./util');
 const argv = require('yargs')
     .demand(1)
     .usage('Usage: $0 <command> [options]')
+    .count('verbose')
+    .alias('v', 'verbose')
     .boolean('s')
     .alias('d', 'directory')
     .describe('d', 'Directory to watch for torrent files')
@@ -25,6 +28,11 @@ const argv = require('yargs')
     .command('start', 'Start monitoring for, sorting, and labeling torrents')
     .argv;
 const command = argv._[0];
+const VERBOSE_LEVEL = argv.verbose;
+
+if(VERBOSE_LEVEL >= 2) logger.level = 'debug';
+else if(VERBOSE_LEVEL >= 1) logger.level = 'info';
+else logger.level = 'warn';
 
 switch(command) {
     case 'start':
