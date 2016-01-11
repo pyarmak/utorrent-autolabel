@@ -36,52 +36,43 @@ const argv = require('yargs')
     .command('list-labels', 'Print the currently defined labels')
     .command('add-tracker', 'Add the given tracker (can be partial) to the given label')
     .command('add-pattern', 'Add the given pattern to the given label')
+    .command('scan', 'Run a one time scan of the watched directory')
     .epilogue('Created by Pavel Yarmak')
     .argv;
+
 const command = argv._[0];
 const VERBOSE_LEVEL = argv.verbose;
 
-if(VERBOSE_LEVEL >= 2) logger.level = 'debug';
-else if(VERBOSE_LEVEL >= 1) logger.level = 'info';
-else logger.level = 'warn';
+if (VERBOSE_LEVEL >= 2) logger.level = 'debug';
+else if (VERBOSE_LEVEL >= 1) logger.level = 'verbose';
+else logger.level = 'info';
 
-switch(command) {
+global.config = config;
+global.logger = logger;
+
+switch (command) {
     case 'start':
-        if(argv.s) Util.saveOptions(defaults, argv, config);
-        new Autolabel(config, logger, argv.n).start();
+        if (argv.s) Util.saveOptions(defaults, argv);
+        new Autolabel(argv.n).start();
         break;
     case 'set-options':
-        Util.saveOptions(defaults, argv, config);
+        Util.saveOptions(defaults, argv);
         break;
     case 'add-label':
-        if(typeof argv._[1] !== 'undefined') {
-            let labels = (Array.isArray(config.get('labels'))) ? config.get('labels') : [];
-            labels.push({ name: argv._[1] });
-            config.set('labels', labels);
-        }
+        if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
+        Util.addLabel(argv._[1]);
         break;
     case 'remove-label':
-        if(typeof argv._[1] !== 'undefined') {
-            let labels = config.get('labels');
-            for(let i = 0; i < labels.length; i++) {
-                if(labels[i].name === argv._[1]) {
-                    labels.splice(i, 1);
-                    break;
-                }
-            }
-            config.set('labels', labels);
-        }
+        if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
+        Util.removeLabel(argv._[1]);
         break;
     case 'list-labels':
-        let labels = config.get('labels');
-        if(labels.length === 0) console.log("There are no labels currently set.");
-        else labels.forEach((label) => { console.log(label.name); });
+        Util.listLabels();
         break;
     case 'add-tracker':
-        Util.mergeTagProperties(config, argv._[1], 'trackers', argv._[2]);
+        Util.mergeTagProperties(argv._[1], 'trackers', argv._[2]);
         break;
     case 'add-pattern':
-        Util.mergeTagProperties(config, argv._[1], 'patterns', argv._[2]);
+        Util.mergeTagProperties(argv._[1], 'patterns', argv._[2]);
         break;
 }
-
