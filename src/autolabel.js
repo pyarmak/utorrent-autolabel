@@ -1,7 +1,8 @@
 'use strict';
 
 class Autolabel {
-    constructor(config) {
+    constructor(config, logger) {
+        this.logger = logger;
         this.config = config;
         this.watch = require('watch');
         this.path = require('path');
@@ -17,18 +18,32 @@ class Autolabel {
     start() {
         this.watch.createMonitor(this.config.get('directory'), (monitor) => {
             monitor.on('created', (file) => {
-                const filename = this.path.basename(file);
-                this._processFile(filename);
+                this._processFile(file);
             });
         });
     }
 
-    _processFile(filename) {
+    _processFile(file) {
+        const self = this;
+        const filename = self.path.basename(file);
         if(filename.substr(filename.length - 8) == '.torrent') {
-            this.nt.read('/home/pavel/Code/utorrent-autolabel/test.torrent', (err, torrent) => {
+            this.nt.read(file, (err, torrent) => {
                 if(err) throw err;
-                let label = this._matchLabel(torrent);
-                console.log(label);
+                let label = self._matchLabel(torrent);
+                if(!label) return self.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+                self.fs.readFile(file, (error, data) => {
+                    if(error) return self.logger.error(error);
+                    self.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
+                        if(err) return self.logger.error(err);
+                        self.logger.info('Setting the torrent label to ' + label);
+                        self.utorrent.call('setprops',
+                            {'hash': torrent.infoHash(), 's': 'label', 'v': label},
+                            (err, res) => {
+                                if(err) return self.logger.error(err);
+                                self.fs.unlink(file);
+                            });
+                    });
+                });
             });
         }
     }
@@ -51,38 +66,3 @@ class Autolabel {
 }
 
 module.exports = Autolabel;
-
-//watch.createMonitor('/home/pavel/Downloads', function (monitor) {
-//    monitor.on("created", function (f, stat) {
-//        var filename = path.basename(f);
-//        console.log(filename);
-//        if(filename.substr(filename.length - 8) == '.torrent') {
-//            nt.read(f, function(err, torrent) {
-//                if(err) throw err;
-//                console.log('Info hash:', torrent.infoHash());
-//                //console.log('Metadata:', torrent.metadata);
-//                if(torrent.metadata.hasOwnProperty('announce')) {
-//                    var tracker = torrent.metadata.announce;
-//                    if(tracker.indexOf('broadcasthe.net') > -1 ||
-//                            tracker.indexOf('landof.tv') > -1) {
-//                        console.log("[info] found TV torrent");
-//                        fs.readFile(f, function(error, data) {
-//                            utorrent.call('add-file', {'torrent_file': data}, function(err, data) {
-//                                if(err) { console.log(err); return; }
-//                                console.log(data);
-//                                utorrent.call('setprops',
-//                                        {'hash': torrent.infoHash(), 's': 'label', 'v': 'TV'},
-//                                        function(err, data) {
-//                                            if(err) {console.log(err); return; }
-//                                            console.log(data);
-//                                            fs.unlink(f);
-//                                        });
-//                            });
-//                        });
-//                    }
-//                }
-//            });
-//        }
-//    });
-//});
-

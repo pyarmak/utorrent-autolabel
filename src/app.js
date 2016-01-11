@@ -37,7 +37,7 @@ else logger.level = 'warn';
 switch(command) {
     case 'start':
         if(argv.s) Util.saveOptions(defaults, argv, config);
-        new Autolabel(config).start();
+        new Autolabel(config, logger).start();
         break;
     case 'set-options':
         Util.saveOptions(defaults, argv, config);
