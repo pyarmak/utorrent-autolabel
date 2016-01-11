@@ -21,6 +21,8 @@ const argv = require('yargs')
     .count('verbose')
     .alias('v', 'verbose')
     .boolean('s')
+    .boolean('n')
+    .alias('n', 'notify')
     .alias('d', 'directory')
     .describe('d', 'Directory to watch for torrent files')
     .alias('s', 'save')
@@ -37,7 +39,7 @@ else logger.level = 'warn';
 switch(command) {
     case 'start':
         if(argv.s) Util.saveOptions(defaults, argv, config);
-        new Autolabel(config, logger).start();
+        new Autolabel(config, logger, argv.n).start();
         break;
     case 'set-options':
         Util.saveOptions(defaults, argv, config);

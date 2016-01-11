@@ -1,10 +1,12 @@
 'use strict';
 
 class Autolabel {
-    constructor(config, logger) {
+    constructor(config, logger, notify) {
+        this.notify = notify;
         this.logger = logger;
         this.config = config;
         this.watch = require('watch');
+        this.libnotify = require( 'libnotify-ffi' );
         this.path = require('path');
         this.fs = require('fs');
         this.nt = require('nt');
@@ -30,11 +32,25 @@ class Autolabel {
             this.nt.read(file, (err, torrent) => {
                 if(err) throw err;
                 let label = self._matchLabel(torrent);
-                if(!label) return self.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+                if(!label) {
+                    if(this.notify) {
+                        self.libnotify.createNotification({
+                            summary: 'Torrent not added!',
+                            body: 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.'
+                        }).push();
+                    }
+                    return self.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+                }
                 self.fs.readFile(file, (error, data) => {
                     if(error) return self.logger.error(error);
                     self.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
                         if(err) return self.logger.error(err);
+                        if(self.notify) {
+                            self.libnotify.createNotification({
+                                summary: 'Torrent added',
+                                body: 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was added to the <b>' + label + '</b> label.'
+                            }).push();
+                        }
                         self.logger.info('Setting the torrent label to ' + label);
                         self.utorrent.call('setprops',
                             {'hash': torrent.infoHash(), 's': 'label', 'v': label},

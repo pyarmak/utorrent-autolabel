@@ -32,6 +32,11 @@ class Util {
         if (!torrent.metadata.hasOwnProperty('announce-list')) return torrent.metadata.announce;
         return flatten(torrent.metadata['announce-list']);
     }
+
+    static getTorrentName(torrent) {
+        if (!torrent.hasOwnProperty('metadata')) return '';
+        return torrent.metadata.info.name;
+    }
 }
 
 function flatten(subject, res) {
