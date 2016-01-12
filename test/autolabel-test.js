@@ -30,12 +30,16 @@ beforeEach(() => {
 });
 
 describe('start', () => {
-    it('should start monitoring the directory', () => {
-        watch.createMonitor = sinon.spy();
-        global.config.get.returns('test');
+    it('should call _processFile on any newly created files within the given directory', () => {
+        let monitor = {on: sinon.stub().yields('testFile')};
+        watch.createMonitor = sinon.stub().yields(monitor);
+        global.config.get.returns('testDirectory');
+        sinon.stub(autolabel, '_processFile');
 
         autolabel.start();
 
-        assert.equal(watch.createMonitor.getCall(0).args[0], 'test');
+        assert.equal(watch.createMonitor.getCall(0).args[0], 'testDirectory');
+        assert.equal(monitor.on.getCall(0).args[0], 'created');
+        assert.equal(autolabel._processFile.getCall(0).args[0], 'testFile');
     });
 });
