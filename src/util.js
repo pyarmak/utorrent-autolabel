@@ -57,7 +57,7 @@ class Util {
 
     static listLabels() {
         let labels = global.config.get('labels');
-        if (labels.length === 0) console.log("There are no labels currently set.");
+        if (labels === 'undefined' || !Array.isArray(labels) || labels.length === 0) console.log("There are no labels currently set.");
         else labels.forEach((label) => {
             console.log(label.name);
         });

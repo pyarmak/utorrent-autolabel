@@ -63,3 +63,59 @@ describe('getTrackers', () => {
         assert.deepEqual(trackers, ['test.org', 'test.com']);
     });
 });
+
+describe('getTorrentName', () => {
+    it('should return the torrent name if metadata is present', () => {
+        let torrent = {metadata: {info: {name: 'testTorrent'}}};
+
+        let name = Util.getTorrentName(torrent);
+
+        assert.equal(name, 'testTorrent');
+    });
+});
+
+describe('addLabel', () => {
+    it('should add label to labels array', () => {
+        global.config = {get: sinon.stub().returns([{name: 'L1'}]), set: sinon.spy()};
+
+        Util.addLabel('L2');
+
+        assert.deepEqual(global.config.set.getCall(0).args[1], [{name: 'L1'}, {name: 'L2'}]);
+    });
+});
+
+describe('removeLabel', () => {
+    it('should remove the label from the labels array', () => {
+        global.config = {get: sinon.stub().returns([{name: 'L1'}, {name: 'L2'}]), set: sinon.spy()};
+
+        Util.removeLabel('L1');
+
+        assert.deepEqual(global.config.set.getCall(0).args[1], [{name: 'L2'}]);
+    });
+});
+
+describe('listLabels', () => {
+    beforeEach(() => {
+        sinon.spy(console, 'log');
+    });
+
+    afterEach(() => {
+        console.log.restore();
+    });
+
+    it('should print out all the labels', () => {
+        global.config = {get: sinon.stub().returns([{name: 'L1'}])};
+
+        Util.listLabels();
+
+        assert(console.log.calledWithExactly('L1'));
+    });
+
+    it('should print out message if there are no labels', () => {
+        global.config = {get: sinon.stub().returns('undefined')};
+
+        Util.listLabels();
+
+        assert(console.log.calledOnce);
+    });
+});
