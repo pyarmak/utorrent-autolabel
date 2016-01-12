@@ -29,8 +29,8 @@ class Util {
 
     static getTrackers(torrent) {
         if (!torrent.hasOwnProperty('metadata')) return [];
-        if (!torrent.metadata.hasOwnProperty('announce-list')) return torrent.metadata.announce;
-        return flatten(torrent.metadata['announce-list']);
+        if (!torrent.metadata.hasOwnProperty('announce-list')) return [torrent.metadata.announce];
+        return Util._flatten(torrent.metadata['announce-list']);
     }
 
     static getTorrentName(torrent) {
@@ -62,18 +62,16 @@ class Util {
             console.log(label.name);
         });
     }
-}
 
-function flatten(subject, res) {
-    if (!res) res = [];
-
-    if (typeof subject === "object" && Array.isArray(subject)) {
-        subject.forEach(function (el) {
-            flatten(el, res);
-        });
-    } else res.push(subject);
-
-    return res;
+    static _flatten(subject, res) {
+        if (!res) res = [];
+        if (typeof subject === "object" && Array.isArray(subject)) {
+            subject.forEach(function (el) {
+                Util._flatten(el, res);
+            });
+        } else res.push(subject);
+        return res;
+    }
 }
 
 module.exports = Util;
