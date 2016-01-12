@@ -6,7 +6,7 @@ const assert = require('assert');
 const sinon = require('sinon');
 const Autolabel = require('../src/autolabel');
 const mockery = require('mockery');
-var autolabel, watch, path, fs, util, nt, escRegex, utorrent;
+var autolabel, watch, path, fs, util, nt, escRegex, utorrent, notify;
 
 before(() => {
     mockery.enable({
@@ -21,10 +21,11 @@ after(() => {
 
 beforeEach(() => {
     global.config = {get: sinon.stub(), set: sinon.spy()};
-    watch = {};
-    utorrent = {};
+    watch = utorrent = notify = {};
+    utorrent.setCredentials = sinon.spy();
     mockery.registerMock('utorrent-api', sinon.stub().returns(utorrent));
     mockery.registerMock('watch', watch);
+    mockery.registerMock('libnotify-ffi', notify);
     autolabel = new Autolabel(false);
 });
 
