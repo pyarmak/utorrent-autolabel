@@ -11,12 +11,12 @@ class Autolabel {
         this.Util = require('./util');
         this.escapeStringRegexp = require('escape-string-regexp');
         const Client = require('utorrent-api');
-        this.utorrent = new Client(this.config.get('host'), this.config.get('port'));
-        this.utorrent.setCredentials(this.config.get('username'), this.config.get('password'));
+        this.utorrent = new Client(global.config.get('host'), global.config.get('port'));
+        this.utorrent.setCredentials(global.config.get('username'), global.config.get('password'));
     }
 
     start() {
-        this.watch.createMonitor(this.config.get('directory'), (monitor) => {
+        this.watch.createMonitor(global.config.get('directory'), (monitor) => {
             monitor.on('created', (file) => {
                 this._processFile(file);
             });
@@ -24,16 +24,15 @@ class Autolabel {
     }
 
     _processFile(file) {
-        const self = this;
-        const filename = self.path.basename(file);
+        const filename = this.path.basename(file);
         if (filename.substr(filename.length - 8) == '.torrent') {
             this.nt.read(file, (err, torrent) => {
                 if (err) throw err;
-                let label = self._matchLabel(torrent);
+                let label = this._matchLabel(torrent);
                 if (!label) {
-                    let message = 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
+                    let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
                     this._notify('Torrent not added!', message);
-                    return self.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+                    return global.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
                 }
                 this._addTorrent(file, torrent);
             });
@@ -42,16 +41,16 @@ class Autolabel {
 
     _addTorrent(file, torrent) {
         this.fs.readFile(file, (error, data) => {
-            if (error) return this.logger.error(error);
+            if (error) return global.logger.error(error);
             this.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
-                if (err) return this.logger.error(err);
+                if (err) return global.logger.error(err);
                 let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was added to the <b>' + label + '</b> label.';
                 this._notify('Torrent added', message);
-                this.logger.info('Setting the torrent label to ' + label);
+                global.logger.info('Setting the torrent label to ' + label);
                 this.utorrent.call('setprops',
                     {'hash': torrent.infoHash(), 's': 'label', 'v': label},
                     (err, res) => {
-                        if (err) return this.logger.error(err);
+                        if (err) return global.logger.error(err);
                         this.fs.unlink(file);
                     });
             });
@@ -60,7 +59,7 @@ class Autolabel {
 
     _notify(title, message) {
         if (!this.notify) return;
-        self.libnotify.createNotification({
+        this.libnotify.createNotification({
             summary: title,
             body: message
         }).push();
@@ -68,7 +67,7 @@ class Autolabel {
 
     _matchLabel(torrent) {
         let trackers = this.Util.getTrackers(torrent);
-        let labels = this.config.get('labels');
+        let labels = global.config.get('labels');
         for (let i = 0; i < labels.length; i++) {
             let label = labels[i];
             for (let j = 0; j < label.trackers.length; j++) {
