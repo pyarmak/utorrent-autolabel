@@ -96,7 +96,7 @@ describe('removeLabel', () => {
 
 describe('listLabels', () => {
     beforeEach(() => {
-        sinon.spy(console, 'log');
+        sinon.stub(console, 'log');
     });
 
     afterEach(() => {
