@@ -31,35 +31,39 @@ class Autolabel {
                 if (err) throw err;
                 let label = self._matchLabel(torrent);
                 if (!label) {
-                    if (this.notify) {
-                        self.libnotify.createNotification({
-                            summary: 'Torrent not added!',
-                            body: 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.'
-                        }).push();
-                    }
+                    let message = 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
+                    this._notify('Torrent not added!', message);
                     return self.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
                 }
-                self.fs.readFile(file, (error, data) => {
-                    if (error) return self.logger.error(error);
-                    self.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
-                        if (err) return self.logger.error(err);
-                        if (self.notify) {
-                            self.libnotify.createNotification({
-                                summary: 'Torrent added',
-                                body: 'Torrent <b>' + self.Util.getTorrentName(torrent) + '</b> was added to the <b>' + label + '</b> label.'
-                            }).push();
-                        }
-                        self.logger.info('Setting the torrent label to ' + label);
-                        self.utorrent.call('setprops',
-                            {'hash': torrent.infoHash(), 's': 'label', 'v': label},
-                            (err, res) => {
-                                if (err) return self.logger.error(err);
-                                self.fs.unlink(file);
-                            });
-                    });
-                });
+                this._addTorrent(file, torrent);
             });
         }
+    }
+
+    _addTorrent(file, torrent) {
+        this.fs.readFile(file, (error, data) => {
+            if (error) return this.logger.error(error);
+            this.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
+                if (err) return this.logger.error(err);
+                let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was added to the <b>' + label + '</b> label.';
+                this._notify('Torrent added', message);
+                this.logger.info('Setting the torrent label to ' + label);
+                this.utorrent.call('setprops',
+                    {'hash': torrent.infoHash(), 's': 'label', 'v': label},
+                    (err, res) => {
+                        if (err) return this.logger.error(err);
+                        this.fs.unlink(file);
+                    });
+            });
+        });
+    }
+
+    _notify(title, message) {
+        if (!this.notify) return;
+        self.libnotify.createNotification({
+            summary: title,
+            body: message
+        }).push();
     }
 
     _matchLabel(torrent) {
