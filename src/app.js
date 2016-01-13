@@ -60,11 +60,11 @@ switch (command) {
         break;
     case 'add-label':
         if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
-        Util.addLabel(argv._[1]);
+        else Util.addLabel(argv._[1]);
         break;
     case 'remove-label':
         if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
-        Util.removeLabel(argv._[1]);
+        else Util.removeLabel(argv._[1]);
         break;
     case 'list-labels':
         Util.listLabels();
