@@ -18,6 +18,7 @@ class Autolabel {
     start() {
         this.watch.createMonitor(global.config.get('directory'), (monitor) => {
             monitor.on('created', (file) => {
+                global.logger.debug(`Found a new file: ${file}`);
                 this._processFile(file);
             });
         });
@@ -25,18 +26,19 @@ class Autolabel {
 
     _processFile(file) {
         const filename = this.path.basename(file);
-        if (filename.substr(filename.length - 8) == '.torrent') {
-            this.nt.read(file, (err, torrent) => {
-                if (err) throw err;
-                let label = this._matchLabel(torrent);
-                if (!label) {
-                    let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
-                    this._notify('Torrent not added!', message);
-                    return global.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
-                }
-                this._addTorrent(file, torrent);
-            });
-        }
+        if (filename.substr(filename.length - 8) !== '.torrent') global.logger.debug(`File '${filename}' is not a torrent. Skipping...`);
+        global.logger.debug(`Found a torrent file: ${filename}. Processing...`);
+        this.nt.read(file, (err, torrent) => {
+            if (err) return global.logger.error(err);
+            let label = this._matchLabel(torrent);
+            if (!label) {
+                let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
+                this._notify('Torrent not added!', message);
+                return global.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+            }
+            global.logger.debug(`Matched the torrent file with rules for label: ${label}. Adding...`);
+            this._addTorrent(file, torrent);
+        });
     }
 
     _addTorrent(file, torrent) {
