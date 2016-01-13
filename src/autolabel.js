@@ -72,12 +72,18 @@ class Autolabel {
         let labels = global.config.get('labels');
         for (let label of labels) {
             for (let cur_tracker of label.trackers) {
-                let match = trackers.find((tracker) => {
-                    let regex = this.escapeStringRegexp(cur_tracker);
-                    return new RegExp(regex).test(tracker);
+                let tracker_match = trackers.find((tracker) => {
+                    let tracker_regex = this.escapeStringRegexp(cur_tracker);
+                    return new RegExp(tracker_regex).test(tracker);
                 });
-                if (match) return label.name;
+                if (tracker_match) return label.name;
             }
+            let name = this.Util.getTorrentName(torrent);
+            let name_match = label.patterns.find((pattern) => {
+                let name_regex = this.escapeStringRegexp(pattern);
+                return new RegExp(name_regex, 'i').test(name);
+            });
+            if (name_match) return label.name;
         }
         return null;
     }

@@ -160,6 +160,10 @@ describe('_matchLabel', () => {
         util.getTrackers = sinon.stub();
     });
 
+    afterEach(() => {
+        mockery.deregisterAll();
+    });
+
     it('should return null if no labels were matched', () => {
         util.getTrackers.returns([]);
         global.config.get.returns([]);
@@ -173,6 +177,18 @@ describe('_matchLabel', () => {
         util.getTrackers.returns(['test.org']);
         global.config.get.returns([{name: 'testLabel', trackers: ['test.org']}]);
         escRegex = sinon.stub().returns("test\.org");
+        mockery.registerMock('escape-string-regexp', escRegex);
+
+        let res = autolabel._matchLabel({});
+
+        assert.equal(res, 'testLabel');
+    });
+
+    it('should return the matching label if torrent name matches one of the label patterns', () => {
+        util.getTrackers.returns(['test.org']);
+        global.config.get.returns([{name: 'testLabel', trackers: [], patterns: ['test']}]);
+        util.getTorrentName = sinon.stub().returns('torrentTestName');
+        escRegex = sinon.stub().returns("test");
         mockery.registerMock('escape-string-regexp', escRegex);
 
         let res = autolabel._matchLabel({});
