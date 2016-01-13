@@ -9,9 +9,9 @@ class Util {
         if (!Array.isArray(labels)) {
             labels = [target];
         } else {
-            for (let i = 0; i < labels.length; i++) {
-                if (labels[i].name === label_name) {
-                    target = labels[i];
+            for (let label of labels) {
+                if (label.name === label_name) {
+                    target = label;
                     break;
                 }
             }

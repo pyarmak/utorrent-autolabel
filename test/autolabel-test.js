@@ -23,7 +23,7 @@ beforeEach(() => {
     global.config = {get: sinon.stub(), set: sinon.spy()};
     let log = sinon.spy();
     global.logger = {debug: log, info: log, error: log, warn: log};
-    watch = path = fs = util = nt = escRegex = utorrent = notify = {};
+    watch = path = fs = util = nt = utorrent = notify = {};
     utorrent.setCredentials = sinon.spy();
     mockery.registerMock('utorrent-api', sinon.stub().returns(utorrent));
     mockery.registerMock('watch', watch);
@@ -32,7 +32,6 @@ beforeEach(() => {
     mockery.registerMock('./util', util);
     mockery.registerMock('fs', fs);
     mockery.registerMock('path', path);
-    mockery.registerMock('escape-string-regexp', escRegex);
     autolabel = new Autolabel(false);
 });
 
@@ -88,5 +87,96 @@ describe('_processFile', () => {
 
             assert(autolabel._notify.calledOnce);
         });
+    });
+});
+
+describe('_addTorrent', () => {
+    beforeEach(() => {
+        fs.readFile = sinon.stub();
+        utorrent.call = sinon.stub();
+        sinon.stub(autolabel, '_notify');
+    });
+
+    it('should read in the file', () => {
+        autolabel._addTorrent('test', {}, 'label');
+
+        assert.equal(fs.readFile.getCall(0).args[0], 'test');
+    });
+
+    describe('adding a torrent', () => {
+        beforeEach(() => {
+            fs.readFile.yields(null, 'data');
+        });
+
+        it('should add the file to utorrent', () => {
+            autolabel._addTorrent('test', {}, 'label');
+
+            assert.equal(utorrent.call.getCall(0).args[0], 'add-file');
+        });
+
+        describe('after having added the torrent', () => {
+            beforeEach(() => {
+                util.getTorrentName = sinon.spy();
+                utorrent.call.yields(null);
+                fs.unlink = sinon.spy();
+            });
+
+            it('should try to notify about adding the torrent', () => {
+                autolabel._addTorrent('test', {infoHash: sinon.spy()}, 'label');
+
+                assert(autolabel._notify.calledOnce);
+            });
+
+            it('should label the torrent properly', () => {
+                autolabel._addTorrent('test', {infoHash: sinon.spy()}, 'label');
+
+                assert.equal(utorrent.call.getCall(1).args[0], 'setprops');
+            });
+
+            it('should remove the torrent file', () => {
+                autolabel._addTorrent('test', {infoHash: sinon.spy()}, 'label');
+
+                assert(fs.unlink.calledOnce);
+            });
+        });
+    });
+});
+
+describe('_notify', () => {
+    it('should send a send a notification if the setting is enabled', () => {
+        autolabel.notify = true;
+        notify.push = sinon.spy();
+        notify.createNotification = sinon.stub().returns(notify);
+
+        autolabel._notify('test', 'message');
+
+        assert(notify.createNotification.calledOnce);
+        assert(notify.push.calledOnce);
+    });
+});
+
+describe('_matchLabel', () => {
+    beforeEach(() => {
+        util.getTrackers = sinon.stub();
+    });
+
+    it('should return null if no labels were matched', () => {
+        util.getTrackers.returns([]);
+        global.config.get.returns([]);
+
+        let res = autolabel._matchLabel({});
+
+        assert.equal(res, null);
+    });
+
+    it('should return the matching label if one is found', () => {
+        util.getTrackers.returns(['test.org']);
+        global.config.get.returns([{name: 'testLabel', trackers: ['test.org']}]);
+        escRegex = sinon.stub().returns("test\.org");
+        mockery.registerMock('escape-string-regexp', escRegex);
+
+        let res = autolabel._matchLabel({});
+
+        assert.equal(res, 'testLabel');
     });
 });

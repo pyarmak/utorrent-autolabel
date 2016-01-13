@@ -37,11 +37,11 @@ class Autolabel {
                 return global.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
             }
             global.logger.debug(`Matched the torrent file with rules for label: ${label}. Adding...`);
-            this._addTorrent(file, torrent);
+            this._addTorrent(file, torrent, label);
         });
     }
 
-    _addTorrent(file, torrent) {
+    _addTorrent(file, torrent, label) {
         this.fs.readFile(file, (error, data) => {
             if (error) return global.logger.error(error);
             this.utorrent.call('add-file', {'torrent_file': data}, (err, res) => {
@@ -70,11 +70,10 @@ class Autolabel {
     _matchLabel(torrent) {
         let trackers = this.Util.getTrackers(torrent);
         let labels = global.config.get('labels');
-        for (let i = 0; i < labels.length; i++) {
-            let label = labels[i];
-            for (let j = 0; j < label.trackers.length; j++) {
+        for (let label of labels) {
+            for (let cur_tracker of label.trackers) {
                 let match = trackers.find((tracker) => {
-                    let regex = this.escapeStringRegexp(label.trackers[j]);
+                    let regex = this.escapeStringRegexp(cur_tracker);
                     return new RegExp(regex).test(tracker);
                 });
                 if (match) return label.name;
