@@ -72,7 +72,13 @@ switch (command) {
     case 'add-tracker':
         Util.mergeTagProperties(argv._[1], 'trackers', argv._[2]);
         break;
+    case 'remove-tracker':
+        Util.removeTagProperty(argv._[1], 'trackers', argv._[2]);
+        break;
     case 'add-pattern':
         Util.mergeTagProperties(argv._[1], 'patterns', argv._[2]);
+        break;
+    case 'remove-pattern':
+        Util.removeTagProperty(argv._[1], 'patterns', argv._[2]);
         break;
 }

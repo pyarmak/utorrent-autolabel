@@ -7,8 +7,11 @@ const sinon = require('sinon');
 const Util = require('../src/util');
 
 describe('mergeTagProperties', function () {
+    beforeEach(() => {
+        global.config = {get: sinon.stub(), set: sinon.spy()};
+    });
     it('should set new tag property if it did not exist before', function () {
-        global.config = {get: sinon.stub().returns({}), set: sinon.spy()};
+        global.config.get.returns({});
 
         Util.mergeTagProperties('TestLabel', 'trackers', 'fake.com');
 
@@ -16,7 +19,7 @@ describe('mergeTagProperties', function () {
     });
 
     it('should merge tag properties if there were pre-existing ones', function () {
-        global.config = {get: sinon.stub().returns([{name: 'TV', trackers: ['test.org']}]), set: sinon.spy()};
+        global.config.get.returns([{name: 'TV', trackers: ['test.org']}]);
 
         Util.mergeTagProperties('TV', 'trackers', 'second.com');
 
@@ -97,6 +100,7 @@ describe('removeLabel', () => {
 describe('listLabels', () => {
     beforeEach(() => {
         sinon.stub(console, 'log');
+        global.config = {get: sinon.stub()};
     });
 
     afterEach(() => {
@@ -104,7 +108,7 @@ describe('listLabels', () => {
     });
 
     it('should print out all the labels', () => {
-        global.config = {get: sinon.stub().returns([{name: 'L1'}])};
+        global.config.get.returns([{name: 'L1'}]);
 
         Util.listLabels();
 
@@ -112,10 +116,22 @@ describe('listLabels', () => {
     });
 
     it('should print out message if there are no labels', () => {
-        global.config = {get: sinon.stub().returns('undefined')};
+        global.config.get.returns('undefined');
 
         Util.listLabels();
 
         assert(console.log.calledOnce);
+    });
+});
+
+describe('removeTagProperty', () => {
+    it('should remove the tag property if it exists', () => {
+        global.config = {get: sinon.stub().returns([{name: 'testLabel', trackers: ['testTracker']}]), set: sinon.spy()};
+
+        Util.removeTagProperty('testLabel', 'trackers', 'testTracker');
+
+        let args = global.config.set.getCall(0).args;
+        assert.equal(args[0], 'labels');
+        assert.deepEqual(args[1], [{name: 'testLabel', trackers: []}]);
     });
 });

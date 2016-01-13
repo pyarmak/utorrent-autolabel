@@ -21,6 +21,25 @@ class Util {
         global.config.set('labels', labels);
     }
 
+    static removeTagProperty(label_name, property, value) {
+        if (typeof label_name === 'undefined') return global.logger.error('Label name is undefined');
+        else if (typeof value === 'undefined') return global.logger.error('Value to remove is undefined');
+        let labels = global.config.get('labels');
+        if (!Array.isArray(labels)) return global.logger.warn('There are no labels set');
+        for (let label of labels) {
+            if (label.name === label_name) {
+                if (!label.hasOwnProperty(property) || !Array.isArray(label[property]))
+                    return global.logger.warn(`Label ${label.name} does not have any ${property} set`);
+                let prop = label[property];
+                let i = prop.indexOf(value);
+                if (i > -1) {
+                    prop.splice(i, 1);
+                    global.config.set('labels', labels);
+                }
+            }
+        }
+    }
+
     static saveOptions(defaults, argv) {
         Object.keys(defaults).forEach((option) => {
             if (argv[option]) global.config.set(option, argv[option]);
