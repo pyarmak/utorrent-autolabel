@@ -36,7 +36,7 @@ const argv = require('yargs')
     .describe('p', 'Port on which the utorrent web gui is running')
     .describe('u', 'Username for the utorrent web gui')
     .describe('w', 'Password for the utorrent web gui')
-    .describe('s', 'Save the provided options (used with start command)')
+    .describe('s', 'Save the provided options (used with start & scan commands)')
     .describe('n', 'Enable libnotify based desktop notifications')
     .describe('v', 'Print more output')
     .command('start', 'Start monitoring for, sorting, and labeling torrents')
@@ -71,12 +71,10 @@ switch (command) {
         Util.saveOptions(defaults, argv);
         break;
     case 'add-label':
-        if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
-        else Util.addLabel(argv._[1]);
+        Util.addLabel(argv._[1]);
         break;
     case 'remove-label':
-        if (typeof argv._[1] === 'undefined') logger.error('No label was provided');
-        else Util.removeLabel(argv._[1]);
+        Util.removeLabel(argv._[1]);
         break;
     case 'list-labels':
         Util.listLabels();

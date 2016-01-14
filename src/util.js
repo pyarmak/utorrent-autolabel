@@ -58,12 +58,14 @@ class Util {
     }
 
     static addLabel(label) {
+        if (typeof label === 'undefined') return global.logger.error('No label was provided');
         let labels = (Array.isArray(global.config.get('labels'))) ? global.config.get('labels') : [];
         labels.push({name: label});
         global.config.set('labels', labels);
     }
 
     static removeLabel(label) {
+        if (typeof label === 'undefined') return global.logger.error('No label was provided');
         let labels = global.config.get('labels');
         for (let i = 0; i < labels.length; i++) {
             if (labels[i].name === label) {
