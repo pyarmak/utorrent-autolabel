@@ -54,6 +54,7 @@ describe('_processFile', () => {
     beforeEach(() => {
         path.basename = sinon.stub().returns('test.torrent');
         nt.read = sinon.stub();
+        path.extname = sinon.stub().returns('.torrent');
     });
 
     it('should try to read parse the file if it ends with .torrent', () => {
@@ -82,6 +83,7 @@ describe('_processFile', () => {
             util.getTorrentName = sinon.stub();
             autolabel._matchLabel.returns(null);
             sinon.stub(autolabel, '_notify');
+            global.config.get.returns([{name: 'testLabel'}]);
 
             autolabel._processFile('test');
 
@@ -194,5 +196,18 @@ describe('_matchLabel', () => {
         let res = autolabel._matchLabel({});
 
         assert.equal(res, 'testLabel');
+    });
+});
+
+describe('scan', () => {
+    it('should process all the files currently in the given directory', () => {
+        global.config.get = sinon.stub().returns('testDir');
+        fs.readdir = sinon.stub().yields(null, ['testFile']);
+        path.join = sinon.stub().returns('testDir/testFile');
+        sinon.stub(autolabel, '_processFile');
+
+        autolabel.scan();
+
+        assert.equal(autolabel._processFile.getCall(0).args[0], 'testDir/testFile');
     });
 });

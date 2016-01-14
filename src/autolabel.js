@@ -24,17 +24,40 @@ class Autolabel {
         });
     }
 
+    scan() {
+        let dir = global.config.get('directory');
+        this.fs.readdir(dir, (err, files) => {
+            if (err) return global.logger.error(err);
+            files.forEach((file) => {
+                global.logger.debug(`Processing file: ${file}`);
+                this._processFile(this.path.join(dir, file));
+            });
+        });
+    }
+
     _processFile(file) {
         const filename = this.path.basename(file);
-        if (filename.substr(filename.length - 8) !== '.torrent') global.logger.debug(`File '${filename}' is not a torrent. Skipping...`);
+        if (this.path.extname(filename) !== '.torrent') return global.logger.debug(`File '${filename}' is not a torrent. Skipping...`);
         global.logger.debug(`Found a torrent file: ${filename}. Processing...`);
         this.nt.read(file, (err, torrent) => {
             if (err) return global.logger.error(err);
-            let label = this._matchLabel(torrent);
+            var label = this._matchLabel(torrent);
             if (!label) {
-                let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.';
-                this._notify('Torrent not added!', message);
-                return global.logger.warn('Could not automatically assign label to torrent ' + filename + '. Skipping...');
+                let message = 'Torrent <b>' + this.Util.getTorrentName(torrent) + '</b> was <b>not</b> added because a label could not be automatically assigned.<br>' +
+                    'Choose a label below or ignore to skip:';
+                let actions = {};
+                let labels = global.config.get('labels');
+                labels.forEach((label) => {
+                    let name = label.name;
+                    actions[name] = {
+                        label: name,
+                        callback: () => {
+                            this._addTorrent(file, torrent, name);
+                        }
+                    }
+                });
+                this._notify('Torrent not added!', message, actions);
+                return global.logger.warn('Could not automatically assign label to torrent ' + filename + '.');
             }
             global.logger.debug(`Matched the torrent file with rules for label: ${label}. Adding...`);
             this._addTorrent(file, torrent, label);
@@ -59,11 +82,13 @@ class Autolabel {
         });
     }
 
-    _notify(title, message) {
+    _notify(title, message, actions) {
         if (!this.notify) return;
+        if (!actions) actions = {};
         this.libnotify.createNotification({
             summary: title,
-            body: message
+            body: message,
+            actions: actions
         }).push();
     }
 

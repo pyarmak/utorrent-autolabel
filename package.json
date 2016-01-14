@@ -1,6 +1,6 @@
 {
   "name": "utorrent-autolabel",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Automatically sort and label torrents using the utorrent API.",
   "main": "main.js",
   "scripts": {

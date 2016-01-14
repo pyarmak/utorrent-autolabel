@@ -85,4 +85,8 @@ switch (command) {
     case 'remove-pattern':
         Util.removeTagProperty(argv._[1], 'patterns', argv._[2]);
         break;
+    case 'scan':
+        if (argv.s) Util.saveOptions(defaults, argv);
+        new Autolabel(argv.n).scan();
+        break;
 }
